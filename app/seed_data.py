@@ -76,10 +76,22 @@ QUIZ_QUESTIONS = [
 
 
 def seed_if_empty(db: Session):
-    if db.query(models.Content).count() == 0:
-        for item in CONTENT:
-            db.add(models.Content(**item))
-    if db.query(models.QuizQuestion).count() == 0:
-        for item in QUIZ_QUESTIONS:
-            db.add(models.QuizQuestion(**item))
+    """
+    Content and quiz questions are reference/catalog data, not user data —
+    so we fully refresh them on every startup rather than only seeding once.
+    This means updating CONTENT or QUIZ_QUESTIONS above and redeploying is
+    enough to push new data live, without needing to manually clear the
+    database each time.
+
+    Student records, quiz responses, and feedback are untouched — only
+    Content and QuizQuestion get reset.
+    """
+    db.query(models.Content).delete()
+    db.query(models.QuizQuestion).delete()
+    db.commit()
+
+    for item in CONTENT:
+        db.add(models.Content(**item))
+    for item in QUIZ_QUESTIONS:
+        db.add(models.QuizQuestion(**item))
     db.commit()
